@@ -1,0 +1,6 @@
+{
+  "name": "Best Education",
+  "description": "A modern, clean, and interactive educational application for students from Kindergarten to JHS3, focusing on Mathematics, English, French, and Science with gamified tracking, lessons, and quizzes.",
+  "requestFramePermissions": [],
+  "majorCapabilities": ["MAJOR_CAPABILITY_SERVER_SIDE_GEMINI_API"]
+}
