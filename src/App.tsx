@@ -215,6 +215,7 @@ export default function App() {
       <MathSection 
         studentProfile={studentProfile}
         onLaunchQuiz={handleLaunchQuiz}
+        audioEnabled={audioEnabled}
       />
     ),
     english: (
@@ -222,6 +223,7 @@ export default function App() {
         subjectId="english"
         studentProfile={studentProfile}
         onLaunchQuiz={handleLaunchQuiz}
+        audioEnabled={audioEnabled}
       />
     ),
     french: (
@@ -229,6 +231,7 @@ export default function App() {
         subjectId="french"
         studentProfile={studentProfile}
         onLaunchQuiz={handleLaunchQuiz}
+        audioEnabled={audioEnabled}
       />
     ),
     science: (
@@ -236,6 +239,7 @@ export default function App() {
         subjectId="science"
         studentProfile={studentProfile}
         onLaunchQuiz={handleLaunchQuiz}
+        audioEnabled={audioEnabled}
       />
     ),
     quizzes: (

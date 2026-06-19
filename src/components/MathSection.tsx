@@ -30,18 +30,51 @@ import {
 } from "lucide-react";
 import { Topic, ClassLevel, DifficultyLevel, StudentProfile } from "../types";
 import { MATH_TOPICS, VISUAL_ICONS } from "../data/learningContent";
+import VideoTutorialPlayer from "./VideoTutorialPlayer";
+import { Tv } from "lucide-react";
 
 interface MathSectionProps {
   studentProfile: StudentProfile;
   onLaunchQuiz: (topic: Topic) => void;
+  audioEnabled: boolean;
 }
 
-export default function MathSection({ studentProfile, onLaunchQuiz }: MathSectionProps) {
+export default function MathSection({ studentProfile, onLaunchQuiz, audioEnabled }: MathSectionProps) {
+  const getProfileFilterCategory = (level: string): "all" | "kg" | "primary" | "jhs" => {
+    if (["KG", "Primary 1", "Primary 2"].includes(level)) return "kg";
+    if (["Primary 3", "Primary 4", "Primary 5", "Primary 6"].includes(level)) return "primary";
+    if (["JHS 1", "JHS 2", "JHS 3"].includes(level)) return "jhs";
+    return "all";
+  };
+
   const [selectedTopicId, setSelectedTopicId] = useState<string>(MATH_TOPICS[0].id);
   const [selectedDifficulty, setSelectedDifficulty] = useState<DifficultyLevel>("Beginner");
-  const [gradeFilter, setGradeFilter] = useState<"all" | "kg" | "primary" | "jhs">("all");
+  const [gradeFilter, setGradeFilter] = useState<"all" | "kg" | "primary" | "jhs">(
+    getProfileFilterCategory(studentProfile.level)
+  );
+  
+  const [showVideo, setShowVideo] = useState<boolean>(false);
 
-  const activeTopic = MATH_TOPICS.find(t => t.id === selectedTopicId) || MATH_TOPICS[0];
+  // Filter topics based on selected category segment tab
+  const getFilteredTopics = () => {
+    return MATH_TOPICS.filter(topic => {
+      if (gradeFilter === "all") return true;
+      if (gradeFilter === "kg") {
+        return topic.levels.includes("KG") || topic.levels.includes("Primary 1") || topic.levels.includes("Primary 2");
+      }
+      if (gradeFilter === "primary") {
+        return topic.levels.includes("Primary 3") || topic.levels.includes("Primary 4") || topic.levels.includes("Primary 5") || topic.levels.includes("Primary 6");
+      }
+      if (gradeFilter === "jhs") {
+        return topic.levels.includes("JHS 1") || topic.levels.includes("JHS 2") || topic.levels.includes("JHS 3");
+      }
+      return true;
+    });
+  };
+
+  const filteredTopics = getFilteredTopics();
+
+  const activeTopic = filteredTopics.find(t => t.id === selectedTopicId) || filteredTopics[0] || MATH_TOPICS[0];
 
   const getTopicIcon = (iconName: string, color: string) => {
     let baseColor = "text-blue-500 bg-blue-100";
@@ -62,25 +95,6 @@ export default function MathSection({ studentProfile, onLaunchQuiz }: MathSectio
       default: return <Calculator className="w-5 h-5" />;
     }
   };
-
-  // Filter topics based on selected category segment tab
-  const getFilteredTopics = () => {
-    return MATH_TOPICS.filter(topic => {
-      if (gradeFilter === "all") return true;
-      if (gradeFilter === "kg") {
-        return topic.levels.includes("KG") || topic.levels.includes("Primary 1") || topic.levels.includes("Primary 2");
-      }
-      if (gradeFilter === "primary") {
-        return topic.levels.includes("Primary 3") || topic.levels.includes("Primary 4") || topic.levels.includes("Primary 5") || topic.levels.includes("Primary 6");
-      }
-      if (gradeFilter === "jhs") {
-        return topic.levels.includes("JHS 1") || topic.levels.includes("JHS 2") || topic.levels.includes("JHS 3");
-      }
-      return true;
-    });
-  };
-
-  const filteredTopics = getFilteredTopics();
 
   return (
     <div className="max-w-6xl mx-auto px-4 py-8">
@@ -218,6 +232,42 @@ export default function MathSection({ studentProfile, onLaunchQuiz }: MathSectio
 
               {/* Lesson Card Explanation Body */}
               <div className="p-6 md:p-8 space-y-6">
+
+                {/* Collapsible Video walkthrough player */}
+                <div className="bg-slate-50 border border-slate-100 rounded-3xl p-4 flex flex-col gap-4">
+                  <div className="flex flex-col sm:flex-row sm:items-center justify-between gap-3">
+                    <div className="flex items-center gap-2.5">
+                      <div className="p-2.5 bg-rose-100 text-rose-600 rounded-xl shrink-0">
+                        <Tv className="w-5 h-5" />
+                      </div>
+                      <div>
+                        <h4 className="text-sm font-extrabold text-slate-800 leading-none">Smarty Owl's Video Tutorial</h4>
+                        <span className="text-[10px] text-slate-400 font-medium block mt-1">Simulated mathematics visual blackboard walkthrough • 1 min</span>
+                      </div>
+                    </div>
+                    <button
+                      onClick={() => setShowVideo(!showVideo)}
+                      className={`text-xs font-bold px-4 py-2 rounded-xl border cursor-pointer transition-all ${
+                        showVideo 
+                          ? "bg-slate-200 text-slate-700 border-slate-300 hover:bg-slate-300" 
+                          : "bg-blue-600 text-white border-blue-600 hover:bg-blue-700 shadow-md shadow-blue-500/10"
+                      }`}
+                    >
+                      {showVideo ? "Hide Video Lesson" : "🎬 Play Video Tutorial"}
+                    </button>
+                  </div>
+
+                  {showVideo && (
+                    <motion.div
+                      initial={{ opacity: 0, height: 0 }}
+                      animate={{ opacity: 1, height: "auto" }}
+                      exit={{ opacity: 0, height: 0 }}
+                      className="overflow-hidden"
+                    >
+                      <VideoTutorialPlayer topic={activeTopic} globalAudioEnabled={audioEnabled} />
+                    </motion.div>
+                  )}
+                </div>
                 
                 {/* 1. Explanatory Statement */}
                 <div className="space-y-2">
