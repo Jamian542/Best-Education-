@@ -203,23 +203,23 @@ export default function ContactPage() {
 
             {/* Offline Contact Details & social */}
             <div className="grid grid-cols-1 sm:grid-cols-3 gap-4">
-              <div className="bg-white rounded-2xl p-4 border border-slate-200/60 shadow-xs flex items-center gap-3">
+              <div className="bg-white rounded-2xl p-4 border border-slate-200/60 shadow-xs flex items-center gap-3 border-l-4 border-l-blue-500">
                 <div className="p-2.5 bg-blue-50 rounded-xl text-blue-600">
                   <Mail className="w-4 h-4" />
                 </div>
                 <div>
                   <span className="text-[9px] text-slate-400 block font-bold">EMAIL SUPPORT</span>
-                  <span className="text-[11px] font-extrabold text-slate-800">support@best-edu.org</span>
+                  <a href="mailto:judelampteyo@gmail.com" className="text-[11px] font-extrabold text-slate-800 hover:text-[#2D6CDF] transition-colors">judelampteyo@gmail.com</a>
                 </div>
               </div>
 
-              <div className="bg-white rounded-2xl p-4 border border-slate-200/60 shadow-xs flex items-center gap-3">
+              <div className="bg-white rounded-2xl p-4 border border-slate-200/60 shadow-xs flex items-center gap-3 border-l-4 border-l-green-500">
                 <div className="p-2.5 bg-green-50 rounded-xl text-green-600">
                   <Phone className="w-4 h-4" />
                 </div>
                 <div>
                   <span className="text-[9px] text-slate-400 block font-bold">TELEPHONE</span>
-                  <span className="text-[11px] font-extrabold text-slate-800">+233 24 123 4567</span>
+                  <a href="tel:+233265569000" className="text-[11px] font-extrabold text-slate-800 hover:text-[#2D6CDF] transition-colors">+233 265569000</a>
                 </div>
               </div>
 
