@@ -260,7 +260,7 @@ export default function Homepage({ onStartLearning, onNavigate, onSelectLevelCli
       </div>
 
       {/* CORE FEATURES EXPLANATION */}
-      <div className="max-w-6xl mx-auto px-4 py-16">
+      <div className="max-w-6xl mx-auto px-4 pt-16 pb-8">
         <div className="grid grid-cols-1 md:grid-cols-3 gap-8">
           {features.map((feat, idx) => (
             <motion.div
@@ -280,6 +280,143 @@ export default function Homepage({ onStartLearning, onNavigate, onSelectLevelCli
               </div>
             </motion.div>
           ))}
+        </div>
+      </div>
+
+      {/* STUDENT SUCCESS STATISTICS SECTION */}
+      <div className="bg-slate-900 text-white py-14 my-8">
+        <div className="max-w-6xl mx-auto px-4">
+          <div className="grid grid-cols-2 md:grid-cols-4 gap-8 text-center">
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              className="space-y-1"
+            >
+              <span className="text-3xl md:text-4xl font-extrabold text-amber-400 block font-mono">12,400+</span>
+              <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Active Scholars</span>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.1 }}
+              className="space-y-1"
+            >
+              <span className="text-3xl md:text-4xl font-extrabold text-[#2ECC71] block font-mono">95.4%</span>
+              <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Grade Improvement</span>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.2 }}
+              className="space-y-1"
+            >
+              <span className="text-3xl md:text-4xl font-extrabold text-sky-400 block font-mono">450K+</span>
+              <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Quizzes Cleared</span>
+            </motion.div>
+
+            <motion.div 
+              initial={{ opacity: 0, scale: 0.9 }}
+              whileInView={{ opacity: 1, scale: 1 }}
+              viewport={{ once: true }}
+              transition={{ delay: 0.3 }}
+              className="space-y-1"
+            >
+              <span className="text-3xl md:text-4xl font-extrabold text-pink-400 block font-mono">100% Free</span>
+              <span className="text-xs text-slate-400 font-semibold uppercase tracking-wider block">Ad-Free & Safe</span>
+            </motion.div>
+          </div>
+        </div>
+      </div>
+
+      {/* TESTIMONIALS SECTION */}
+      <div className="max-w-6xl mx-auto px-4 py-16 text-center">
+        <span className="text-xs font-bold uppercase tracking-wider text-green-600 bg-green-100/60 px-3.5 py-1.5 rounded-full mb-3 inline-block">
+          Scholastic Testimonials
+        </span>
+        <h2 className="text-3xl font-extrabold text-slate-800 font-heading mb-3">Feedback from Parents & Students</h2>
+        <p className="text-slate-500 text-sm max-w-xl mx-auto mb-10">
+          Read real stories of children unlocking stars, crushing quizzes, and boosting school performance!
+        </p>
+
+        <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            whileHover={{ y: -4 }}
+            className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xs text-left justify-between flex flex-col"
+          >
+            <div className="space-y-3">
+              <div className="flex gap-1 text-amber-400">
+                {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed italic font-sans">
+                "My daughter Ama was struggling with her multiplication tables. After studying the JHS chapters and practicing quizzes here, she scored perfectly in her term exams!"
+              </p>
+            </div>
+            <div className="mt-6 flex items-center gap-3 border-t border-slate-50 pt-4">
+              <div className="w-10 h-10 rounded-xl bg-blue-100 flex items-center justify-center text-lg select-none">👩‍👦</div>
+              <div>
+                <h4 className="font-extrabold text-xs text-slate-800">Mrs. Abigail Boateng</h4>
+                <p className="text-[10px] text-slate-400">Parent, Accra</p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.1 }}
+            whileHover={{ y: -4 }}
+            className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xs text-left justify-between flex flex-col"
+          >
+            <div className="space-y-3">
+              <div className="flex gap-1 text-amber-400">
+                {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed italic font-sans">
+                "I love earning badges like the Perfect Brainstar. Smarty Owl helps me solve tough fractions and geometry questions like a fun mobile game!"
+              </p>
+            </div>
+            <div className="mt-6 flex items-center gap-3 border-t border-slate-50 pt-4">
+              <div className="w-10 h-10 rounded-xl bg-green-100 flex items-center justify-center text-lg select-none">👦</div>
+              <div>
+                <h4 className="font-extrabold text-xs text-slate-800">Eugene Asante</h4>
+                <p className="text-[10px] text-slate-400">Primary 5 Scholar, Kumasi</p>
+              </div>
+            </div>
+          </motion.div>
+
+          <motion.div
+            initial={{ opacity: 0, y: 15 }}
+            whileInView={{ opacity: 1, y: 0 }}
+            viewport={{ once: true }}
+            transition={{ delay: 0.2 }}
+            whileHover={{ y: -4 }}
+            className="bg-white p-6 rounded-3xl border border-slate-200/60 shadow-xs text-left justify-between flex flex-col"
+          >
+            <div className="space-y-3">
+              <div className="flex gap-1 text-amber-400">
+                {Array.from({ length: 5 }).map((_, i) => <Star key={i} className="w-4 h-4 fill-current" />)}
+              </div>
+              <p className="text-xs text-slate-600 leading-relaxed italic font-sans">
+                "The web-based lessons are visual, lightweight, and align exactly with state education goals. It's the ultimate learning tool for school students!"
+              </p>
+            </div>
+            <div className="mt-6 flex items-center gap-3 border-t border-slate-50 pt-4">
+              <div className="w-10 h-10 rounded-xl bg-purple-100 flex items-center justify-center text-lg select-none">👨‍🏫</div>
+              <div>
+                <h4 className="font-extrabold text-xs text-slate-800">Mr. Albert Kwaku</h4>
+                <p className="text-[10px] text-slate-400">Primary Principal, Ho</p>
+              </div>
+            </div>
+          </motion.div>
         </div>
       </div>
 

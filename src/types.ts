@@ -79,6 +79,7 @@ export interface Badge {
 }
 
 export interface StudentProfile {
+  id?: string;
   name: string;
   level: ClassLevel;
   avatar: string; // Icon or preset
@@ -89,4 +90,6 @@ export interface StudentProfile {
   streakDays: number;
   unlockedBadgeIds: string[];
   lastActiveTopicId?: string;
+  email?: string;
+  provider?: "local" | "gmail" | "outlook";
 }

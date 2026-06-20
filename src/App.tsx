@@ -27,7 +27,14 @@ import {
   ChevronRight,
   Smile,
   AlertTriangle,
-  CheckCircle
+  CheckCircle,
+  FolderDown,
+  Newspaper,
+  Mail,
+  Users,
+  Shield,
+  Brain,
+  Home
 } from "lucide-react";
 
 import { StudentProfile, ClassLevel, SubjectId, Topic } from "./types";
@@ -42,39 +49,66 @@ import QuizzesPage from "./components/QuizzesPage";
 import ProgressPage from "./components/ProgressPage";
 import AboutUs from "./components/AboutUs";
 import QuizModal from "./components/QuizModal";
+import ResourcesPage from "./components/ResourcesPage";
+import BlogPage from "./components/BlogPage";
+import ContactPage from "./components/ContactPage";
+import ParentPortal from "./components/ParentPortal";
+import TeacherPortal from "./components/TeacherPortal";
+import AIPage from "./components/AIPage";
+import CoursesPage from "./components/CoursesPage";
+import AccountsManager from "./components/AccountsManager";
 
-const LOCAL_STORAGE_KEY = "best_education_profile_v2";
+const LOCAL_STORAGE_ACTIVE_ID_KEY = "best_education_active_id_v3";
+const LOCAL_STORAGE_PROFILES_KEY = "best_education_profiles_list_v3";
 
 const DEFAULT_PROFILE: StudentProfile = {
-  name: "Kofi Lamptey",
+  id: "default",
+  name: "Guest Student",
   level: "Primary 4",
-  avatar: "👦",
-  xp: 150,
-  stars: 6,
-  completedQuizzes: { "addition": 100 },
-  studyMinutes: 28,
-  streakDays: 4,
-  unlockedBadgeIds: ["first_login"]
+  avatar: "🎓",
+  xp: 0,
+  stars: 0,
+  completedQuizzes: {},
+  studyMinutes: 0,
+  streakDays: 0,
+  unlockedBadgeIds: []
 };
 
 export default function App() {
+  const [profiles, setProfiles] = useState<StudentProfile[]>([DEFAULT_PROFILE]);
   const [studentProfile, setStudentProfile] = useState<StudentProfile>(DEFAULT_PROFILE);
   const [activeTab, setActiveTab] = useState<string>("home");
   const [activeQuizTopic, setActiveQuizTopic] = useState<Topic | null>(null);
   const [mobileMenuOpen, setMobileMenuOpen] = useState(false);
   const [audioEnabled, setAudioEnabled] = useState(true);
+  const [accountsModalOpen, setAccountsModalOpen] = useState(false);
   
   // Custom temporary alert banner state for newly unlocked badges!
   const [newlyUnlockedBadge, setNewlyUnlockedBadge] = useState<string | null>(null);
 
-  // Load profile from local storage on mount
+  // Load profiles from local storage on mount
   useEffect(() => {
     try {
-      const stored = localStorage.getItem(LOCAL_STORAGE_KEY);
-      if (stored) {
-        setStudentProfile(JSON.parse(stored));
+      const storedProfiles = localStorage.getItem(LOCAL_STORAGE_PROFILES_KEY);
+      const activeId = localStorage.getItem(LOCAL_STORAGE_ACTIVE_ID_KEY);
+      
+      let parsedProfiles: StudentProfile[] = [DEFAULT_PROFILE];
+      if (storedProfiles) {
+        parsedProfiles = JSON.parse(storedProfiles);
+        setProfiles(parsedProfiles);
+
+        let activeProfile = parsedProfiles[0];
+        if (activeId) {
+          const found = parsedProfiles.find(p => (p.id || "default") === activeId);
+          if (found) activeProfile = found;
+        }
+        setStudentProfile(activeProfile);
       } else {
-        localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(DEFAULT_PROFILE));
+        localStorage.setItem(LOCAL_STORAGE_PROFILES_KEY, JSON.stringify([DEFAULT_PROFILE]));
+        setProfiles([DEFAULT_PROFILE]);
+        setStudentProfile(DEFAULT_PROFILE);
+        // Automatically prompt the student to sign up or switch accounts with a fresh clean state
+        setAccountsModalOpen(true);
       }
     } catch (e) {
       console.error("Local storage not accessible:", e);
@@ -84,11 +118,47 @@ export default function App() {
   // Save profile helper
   const saveProfile = (newProfile: StudentProfile) => {
     setStudentProfile(newProfile);
-    try {
-      localStorage.setItem(LOCAL_STORAGE_KEY, JSON.stringify(newProfile));
-    } catch (e) {
-      console.warn("Could not save to localStorage:", e);
+    
+    setProfiles((prevProfiles) => {
+      const updated = prevProfiles.map(p => (p.id || "default") === (newProfile.id || "default") ? newProfile : p);
+      if (!updated.some(p => (p.id || "default") === (newProfile.id || "default"))) {
+        updated.push(newProfile);
+      }
+      try {
+        localStorage.setItem(LOCAL_STORAGE_PROFILES_KEY, JSON.stringify(updated));
+        localStorage.setItem(LOCAL_STORAGE_ACTIVE_ID_KEY, newProfile.id || "default");
+      } catch (e) {
+        console.warn("Could not save profiles list:", e);
+      }
+      return updated;
+    });
+  };
+
+  const handleSelectProfileId = (profileId: string) => {
+    const found = profiles.find(p => (p.id || "default") === profileId);
+    if (found) {
+      setStudentProfile(found);
+      try {
+        localStorage.setItem(LOCAL_STORAGE_ACTIVE_ID_KEY, profileId);
+      } catch (e) {
+        console.warn("Could not save active profile id:", e);
+      }
     }
+  };
+
+  const handleCreateProfile = (newProfile: StudentProfile) => {
+    setProfiles((prev) => {
+      const updated = [...prev, newProfile];
+      try {
+        localStorage.setItem(LOCAL_STORAGE_PROFILES_KEY, JSON.stringify(updated));
+        localStorage.setItem(LOCAL_STORAGE_ACTIVE_ID_KEY, newProfile.id || "default");
+      } catch (e) {
+        console.warn("Could not save new profile:", e);
+      }
+      return updated;
+    });
+    setStudentProfile(newProfile);
+    setActiveTab("dashboard");
   };
 
   const handleProfileChange = (updatedFields: Partial<StudentProfile>) => {
@@ -101,8 +171,16 @@ export default function App() {
   };
 
   const handleResetProgress = () => {
-    if (window.confirm("Are you sure you want to reset your quiz scores and achievements? This will start you fresh!")) {
-      saveProfile(DEFAULT_PROFILE);
+    if (window.confirm("Are you sure you want to delete all profiles, scores, and start fresh?")) {
+      const resetList = [DEFAULT_PROFILE];
+      setProfiles(resetList);
+      setStudentProfile(DEFAULT_PROFILE);
+      try {
+        localStorage.setItem(LOCAL_STORAGE_PROFILES_KEY, JSON.stringify(resetList));
+        localStorage.setItem(LOCAL_STORAGE_ACTIVE_ID_KEY, "default");
+      } catch (e) {
+        console.warn("Could not reset localStorage:", e);
+      }
       setActiveTab("dashboard");
     }
   };
@@ -255,17 +333,48 @@ export default function App() {
     ),
     about: (
       <AboutUs />
+    ),
+    courses: (
+      <CoursesPage 
+        onSelectTopic={handleLaunchQuiz} 
+        onSelectSubject={(id) => setActiveTab(id)} 
+      />
+    ),
+    resources: (
+      <ResourcesPage />
+    ),
+    blog: (
+      <BlogPage />
+    ),
+    contact: (
+      <ContactPage />
+    ),
+    parent: (
+      <ParentPortal studentProfile={studentProfile} />
+    ),
+    teacher: (
+      <TeacherPortal />
+    ),
+    ai: (
+      <AIPage studentProfile={studentProfile} />
     )
   };
 
   const sidebarTabs = [
-    { id: "dashboard", label: "Dashboard", icon: User },
+    { id: "dashboard", label: "Dashboard Hub", icon: User },
+    { id: "ai", label: "AI Tutor Companion", icon: Brain },
+    { id: "courses", label: "Courses Catalog", icon: GraduationCap },
     { id: "math", label: "Math Syllabus", icon: Calculator },
     { id: "english", label: "English Syllabus", icon: BookOpen },
     { id: "french", label: "French Syllabus", icon: Languages },
     { id: "science", label: "Science Syllabus", icon: Sparkles },
     { id: "quizzes", label: "All Quizzes", icon: ClipboardCheck },
     { id: "progress", label: "Analytics Progress", icon: TrendingUp },
+    { id: "resources", label: "Study Resources", icon: FolderDown },
+    { id: "blog", label: "Education Blog", icon: Newspaper },
+    { id: "parent", label: "Parent Portal", icon: Users },
+    { id: "teacher", label: "Teacher Portal", icon: Shield },
+    { id: "contact", label: "Contact & FAQ", icon: Mail },
     { id: "about", label: "About Us Mission", icon: Heart }
   ];
 
@@ -341,32 +450,49 @@ export default function App() {
             )}
 
             {/* Navigation links */}
-            <div className="flex items-center gap-1">
-              <button 
-                onClick={() => setActiveTab("home")}
-                className={`px-3 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === "home" ? "bg-slate-100 text-[#2C3E50]" : "text-slate-500 hover:text-[#2C3E50] hover:bg-slate-50"}`}
-              >
-                Home
-              </button>
-              <button 
-                onClick={() => setActiveTab("dashboard")}
-                className={`px-3 py-2 text-xs font-bold rounded-lg transition-all ${activeTab !== "home" && activeTab !== "about" ? "bg-[#2D6CDF] text-white shadow-xs" : "text-slate-500 hover:text-[#2C3E50] hover:bg-slate-50"}`}
-              >
-                Student Dash
-              </button>
-              <button 
-                onClick={() => setActiveTab("about")}
-                className={`px-3 py-2 text-xs font-bold rounded-lg transition-all ${activeTab === "about" ? "bg-slate-100 text-[#2C3E50]" : "text-slate-500 hover:text-[#2C3E50] hover:bg-slate-50"}`}
-              >
-                Our Mission
-              </button>
+            <div className="flex flex-wrap items-center gap-1">
+              {[
+                { id: "home", label: "Home" },
+                { id: "dashboard", label: "Dashboard" },
+                { id: "courses", label: "Courses" },
+                { id: "quizzes", label: "Quizzes" },
+                { id: "resources", label: "Resources" },
+                { id: "blog", label: "Blog" },
+                { id: "contact", label: "Contact Us" },
+                { id: "about", label: "About Us" }
+              ].map((link) => {
+                const isActive = activeTab === link.id;
+                return (
+                  <button 
+                    key={link.id}
+                    onClick={() => setActiveTab(link.id)}
+                    className={`px-2.5 py-1.5 text-xs font-bold rounded-lg transition-all cursor-pointer ${
+                      isActive 
+                        ? "bg-[#2D6CDF] text-white shadow-xs" 
+                        : "text-slate-500 hover:text-[#2C3E50] hover:bg-slate-50"
+                    }`}
+                  >
+                    {link.label}
+                  </button>
+                );
+              })}
             </div>
 
-            {/* Right side helper controllers: Sound and profile reset */}
+            {/* Right side helper controllers: Profiles, Sound and profile reset */}
             <div className="flex items-center gap-2">
               <button
+                onClick={() => setAccountsModalOpen(true)}
+                className="flex items-center gap-1.5 px-3 py-1.5 bg-[#2D6CDF]/10 hover:bg-[#2D6CDF]/20 text-[#2D6CDF] text-xs font-extrabold rounded-xl transition-all cursor-pointer border border-[#2D6CDF]/20"
+                title="Profiles, Gmail and Outlook Account Switcher"
+              >
+                <span className="text-sm select-none">{studentProfile.avatar}</span>
+                <span className="hidden xl:inline">{studentProfile.name.split(" ")[0]}</span>
+                <span className="text-[9px] bg-[#2D6CDF]/15 px-1.5 py-0.5 rounded text-[#2D6CDF] font-mono font-bold uppercase">Portals</span>
+              </button>
+
+              <button
                 onClick={() => setAudioEnabled(!audioEnabled)}
-                className="p-2 hover:bg-slate-100 rounded-xl transition-all text-slate-400 hover:text-slate-600"
+                className="p-2 hover:bg-slate-100 rounded-xl transition-all text-slate-400 hover:text-slate-600 cursor-pointer"
                 title={audioEnabled ? "Mute interactive noises" : "Enable student narration noises"}
               >
                 {audioEnabled ? <Volume2 className="w-4 h-4 text-[#2ECC71]" /> : <VolumeX className="w-4 h-4 text-slate-400" />}
@@ -374,7 +500,7 @@ export default function App() {
               
               <button
                 onClick={handleResetProgress}
-                className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-xl transition-all"
+                className="p-2 hover:bg-red-50 text-slate-400 hover:text-red-500 rounded-xl transition-all cursor-pointer"
                 title="Restart curriculum and restore default profile values"
               >
                 <Trash2 className="w-4 h-4" />
@@ -419,66 +545,51 @@ export default function App() {
               </div>
 
               {/* Navigation links stack matching sidebars */}
-              <div className="grid grid-cols-2 gap-2">
-                <button
-                  onClick={() => { setActiveTab("home"); setMobileMenuOpen(false); }}
-                  className={`p-3 text-xs font-bold rounded-xl text-center border border-white/5 ${activeTab === "home" ? "bg-white/10 text-white" : "bg-white/5 text-gray-300"}`}
-                >
-                  Home Landing
-                </button>
-                <button
-                  onClick={() => { setActiveTab("dashboard"); setMobileMenuOpen(false); }}
-                  className={`p-3 text-xs font-bold rounded-xl text-center border border-white/5 ${activeTab === "dashboard" ? "bg-[#2D6CDF] text-white" : "bg-white/5 text-gray-300"}`}
-                >
-                  Dashboard Hub
-                </button>
-                <button
-                  onClick={() => { setActiveTab("math"); setMobileMenuOpen(false); }}
-                  className={`p-3 text-xs font-bold rounded-xl text-center border border-white/5 ${activeTab === "math" ? "bg-[#2D6CDF] text-white" : "bg-white/5 text-gray-300"}`}
-                >
-                  Mathematics
-                </button>
-                <button
-                  onClick={() => { setActiveTab("english"); setMobileMenuOpen(false); }}
-                  className={`p-3 text-xs font-bold rounded-xl text-center border border-white/5 ${activeTab === "english" ? "bg-[#2ECC71] text-white" : "bg-white/5 text-gray-300"}`}
-                >
-                  English
-                </button>
-                <button
-                  onClick={() => { setActiveTab("french"); setMobileMenuOpen(false); }}
-                  className={`p-3 text-xs font-bold rounded-xl text-center border border-white/5 ${activeTab === "french" ? "bg-[#8E44AD] text-white" : "bg-white/5 text-gray-300"}`}
-                >
-                  French
-                </button>
-                <button
-                  onClick={() => { setActiveTab("science"); setMobileMenuOpen(false); }}
-                  className={`p-3 text-xs font-bold rounded-xl text-center border border-white/5 ${activeTab === "science" ? "bg-[#F1C40F] text-slate-950" : "bg-white/5 text-gray-300"}`}
-                >
-                  Science Unit
-                </button>
-                <button
-                  onClick={() => { setActiveTab("quizzes"); setMobileMenuOpen(false); }}
-                  className={`p-3 text-xs font-bold rounded-xl text-center border border-white/5 ${activeTab === "quizzes" ? "bg-[#2D6CDF] text-white" : "bg-white/5 text-gray-300"}`}
-                >
-                  All Quizzes
-                </button>
-                <button
-                  onClick={() => { setActiveTab("progress"); setMobileMenuOpen(false); }}
-                  className={`p-3 text-xs font-bold rounded-xl text-center border border-white/5 ${activeTab === "progress" ? "bg-[#2ECC71] text-white" : "bg-white/5 text-gray-300"}`}
-                >
-                  Analytics Log
-                </button>
-                <button
-                  onClick={() => { setActiveTab("about"); setMobileMenuOpen(false); }}
-                  className={`p-3 text-xs font-bold rounded-xl text-center border border-white/5 ${activeTab === "about" ? "bg-white/10 text-white" : "bg-white/5 text-gray-300"}`}
-                >
-                  Our Mission
-                </button>
+              <div className="grid grid-cols-2 gap-2 text-xs">
+                {[
+                  { id: "home", label: "Home", color: "bg-white/5 text-gray-300" },
+                  { id: "dashboard", label: "Dashboard Hub", color: "bg-[#2D6CDF] text-white" },
+                  { id: "ai", label: "AI Companion", color: "bg-purple-950/40 text-purple-200" },
+                  { id: "courses", label: "Courses", color: "bg-green-950/40 text-green-200" },
+                  { id: "math", label: "Math Syllabus", color: "bg-blue-950/40 text-blue-200" },
+                  { id: "english", label: "English Syllabus", color: "bg-emerald-950/40 text-emerald-200" },
+                  { id: "french", label: "French Syllabus", color: "bg-orange-950/40 text-orange-200" },
+                  { id: "science", label: "Science Syllabus", color: "bg-amber-950/40 text-amber-200" },
+                  { id: "quizzes", label: "All Quizzes", color: "bg-white/5 text-gray-300" },
+                  { id: "progress", label: "Analytics Log", color: "bg-white/5 text-gray-300" },
+                  { id: "resources", label: "Resources", color: "bg-white/5 text-gray-300" },
+                  { id: "blog", label: "Syllabus Blog", color: "bg-white/5 text-gray-300" },
+                  { id: "parent", label: "Parent Portal", color: "bg-white/5 text-gray-300" },
+                  { id: "teacher", label: "Teacher Portal", color: "bg-white/5 text-gray-300" },
+                  { id: "contact", label: "Contact Us", color: "bg-white/5 text-gray-300" },
+                  { id: "about", label: "Our Mission", color: "bg-white/5 text-gray-300" }
+                ].map((item) => {
+                  const isActive = activeTab === item.id;
+                  return (
+                    <button
+                      key={item.id}
+                      onClick={() => { setActiveTab(item.id); setMobileMenuOpen(false); }}
+                      className={`p-2.5 font-bold rounded-xl text-center border border-white/5 ${
+                        isActive ? "bg-[#2D6CDF] text-white" : item.color
+                      }`}
+                    >
+                      {item.label}
+                    </button>
+                  );
+                })}
                 
+                {/* Profiles & Accounts button inside mobile cabinet */}
+                <button
+                  onClick={() => { setAccountsModalOpen(true); setMobileMenuOpen(false); }}
+                  className="p-2.5 font-bold rounded-xl text-center border bg-[#2D6CDF]/20 border-[#2D6CDF]/30 text-[#6ea3ff] hover:bg-[#2D6CDF]/35 flex items-center justify-center gap-1.5 cursor-pointer"
+                >
+                  <User className="w-3.5 h-3.5 text-white" /> Switch Accounts / Sign Up
+                </button>
+
                 {/* Reset button inside mobile cabinet */}
                 <button
                   onClick={() => { handleResetProgress(); setMobileMenuOpen(false); }}
-                  className="p-3 text-xs font-bold rounded-xl text-center border bg-red-950/40 border-red-900 text-red-400 hover:bg-red-900/50 flex items-center justify-center gap-1.5"
+                  className="p-2.5 font-bold rounded-xl text-center border bg-red-950/40 border-red-900 text-red-400 hover:bg-red-900/50 flex items-center justify-center gap-1.5 cursor-pointer"
                 >
                   <Trash2 className="w-3.5 h-3.5" /> Clear Progress
                 </button>
@@ -618,6 +729,15 @@ export default function App() {
           />
         )}
       </AnimatePresence>
+
+      <AccountsManager 
+        isOpen={accountsModalOpen}
+        onClose={() => setAccountsModalOpen(false)}
+        currentProfile={studentProfile}
+        profiles={profiles}
+        onSelectProfile={handleSelectProfileId}
+        onCreateProfile={handleCreateProfile}
+      />
 
     </div>
   );

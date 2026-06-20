@@ -16,7 +16,14 @@ import {
   Sparkles, 
   Clock, 
   Tv,
-  GraduationCap
+  GraduationCap,
+  Sliders,
+  Settings2,
+  Users,
+  Heart,
+  Smile,
+  RefreshCw,
+  SlidersHorizontal
 } from "lucide-react";
 import { Topic } from "../types";
 
@@ -37,12 +44,88 @@ interface VideoTutorialPlayerProps {
   globalAudioEnabled: boolean;
 }
 
+// Interactive custom classroom tutor characters with tailored synthesizer parameters!
+interface TutorProfile {
+  id: string;
+  name: string;
+  role: string;
+  avatar: string;
+  pitch: number;
+  rate: number;
+  genderPreference: 'female' | 'male' | 'none';
+  customDescription: string;
+  tagline: string;
+  themeColor: string;
+}
+
+const TUTOR_PROFILES: TutorProfile[] = [
+  {
+    id: "smarty_owl",
+    name: "Smarty Owl",
+    role: "AI Classroom Mascot",
+    avatar: "🦉",
+    pitch: 1.25,
+    rate: 1.05,
+    genderPreference: 'none',
+    customDescription: "High-pitched, enthusiastic, fast-paced educational owl guide.",
+    tagline: "Whoo-whoo! Let's solve this together!",
+    themeColor: "from-blue-500 to-[#2D6CDF]"
+  },
+  {
+    id: "teacher_ama",
+    name: "Teacher Ama",
+    role: "Syllabus Headmistress",
+    avatar: "👩‍🏫",
+    pitch: 1.05,
+    rate: 0.90,
+    genderPreference: 'female',
+    customDescription: "Closer to standard classroom teaching; warm, paced, and steady.",
+    tagline: "Take your time, you are doing wonderfully!",
+    themeColor: "from-emerald-500 to-green-600"
+  },
+  {
+    id: "prof_arthur",
+    name: "Prof. Arthur",
+    role: "Senior Science Fellow",
+    avatar: "👨‍🏫",
+    pitch: 0.85,
+    rate: 0.95,
+    genderPreference: 'male',
+    customDescription: "Authoritative, classical baritone tone for complex diagrams.",
+    tagline: "Let us examine the precise details here.",
+    themeColor: "from-indigo-500 to-purple-600"
+  },
+  {
+    id: "kid_kofi",
+    name: "Buddy Kofi",
+    role: "Your Peer Study Companion",
+    avatar: "👦",
+    pitch: 1.35,
+    rate: 1.15,
+    genderPreference: 'none',
+    customDescription: "Bright, fast voice that feels like learning with a school friend.",
+    tagline: "Awesome work! This lesson is super fun!",
+    themeColor: "from-amber-500 to-orange-600"
+  }
+];
+
 export default function VideoTutorialPlayer({ topic, globalAudioEnabled }: VideoTutorialPlayerProps) {
   const [isPlaying, setIsPlaying] = useState<boolean>(false);
   const [activeScene, setActiveScene] = useState<number>(0);
   const [progress, setProgress] = useState<number>(0); // 0 to 100 within active scene
   const [playSpeed, setPlaySpeed] = useState<number>(1);
   const [localAudioMuted, setLocalAudioMuted] = useState<boolean>(!globalAudioEnabled);
+  
+  // High quality voice synthesis customizations
+  const [voices, setVoices] = useState<SpeechSynthesisVoice[]>([]);
+  const [selectedVoiceURI, setSelectedVoiceURI] = useState<string>("");
+  const [selectedTutorId, setSelectedTutorId] = useState<string>("smarty_owl");
+  
+  // Custom manual slider overrides
+  const [userPitch, setUserPitch] = useState<number>(1.25);
+  const [userRate, setUserRate] = useState<number>(1.05);
+  const [isSpeaking, setIsSpeaking] = useState<boolean>(false);
+  const [showVoiceCustomizer, setShowVoiceCustomizer] = useState<boolean>(false);
   
   // Timer interval storage
   const intervalRef = useRef<NodeJS.Timeout | null>(null);
@@ -51,6 +134,62 @@ export default function VideoTutorialPlayer({ topic, globalAudioEnabled }: Video
   useEffect(() => {
     setLocalAudioMuted(!globalAudioEnabled);
   }, [globalAudioEnabled]);
+
+  // Load operating system / browser Speech Synthesis voices dynamically
+  useEffect(() => {
+    if (typeof window !== "undefined" && "speechSynthesis" in window) {
+      const loadBrowserVoices = () => {
+        const allVoices = window.speechSynthesis.getVoices();
+        // Look for English (en) and French (fr) language packs
+        const filtered = allVoices.filter(v => v.lang.startsWith("en") || v.lang.startsWith("fr"));
+        setVoices(filtered);
+
+        // Pre-select the highest quality English voice if currently empty
+        if (filtered.length > 0) {
+          const preferredDefault = filtered.find(v => 
+            v.name.toLowerCase().includes("google us english") ||
+            v.name.toLowerCase().includes("natural") ||
+            v.name.toLowerCase().includes("premium") ||
+            v.name.toLowerCase().includes("samantha") || 
+            v.name.toLowerCase().includes("zira")
+          ) || filtered[0];
+          
+          setSelectedVoiceURI(preferredDefault.voiceURI);
+        }
+      };
+
+      loadBrowserVoices();
+      if (window.speechSynthesis.onvoiceschanged !== undefined) {
+        window.speechSynthesis.onvoiceschanged = loadBrowserVoices;
+      }
+    }
+  }, []);
+
+  // Update voice preset inputs whenever the child chooses a different Tutor Profile
+  useEffect(() => {
+    const tutorObj = TUTOR_PROFILES.find(p => p.id === selectedTutorId);
+    if (tutorObj) {
+      setUserPitch(tutorObj.pitch);
+      setUserRate(tutorObj.rate);
+
+      // Auto-assign matching OS voice if available
+      if (voices.length > 0) {
+        const matchingVoice = voices.find(v => {
+          const nameLower = v.name.toLowerCase();
+          if (tutorObj.genderPreference === "female") {
+            return nameLower.includes("female") || nameLower.includes("samantha") || nameLower.includes("zira") || nameLower.includes("karen");
+          }
+          if (tutorObj.genderPreference === "male") {
+            return nameLower.includes("male") || nameLower.includes("david") || nameLower.includes("daniel") || nameLower.includes("guy");
+          }
+          return false;
+        });
+        if (matchingVoice) {
+          setSelectedVoiceURI(matchingVoice.voiceURI);
+        }
+      }
+    }
+  }, [selectedTutorId, voices]);
 
   // Generate 4 highly educational storyboard scenes tailored specifically to the selected topic's data!
   const getStoryboard = (t: Topic): VideoScene[] => {
@@ -131,15 +270,53 @@ export default function VideoTutorialPlayer({ topic, globalAudioEnabled }: Video
     // Stop any standing speech first to prevent double overlaps
     window.speechSynthesis.cancel();
     
-    if (localAudioMuted) return;
+    if (localAudioMuted) {
+      setIsSpeaking(false);
+      return;
+    }
 
     const utterance = new SpeechSynthesisUtterance(text);
-    // Setting suitable pitch and speed
-    utterance.pitch = 1.1; // friendly educational tone
-    utterance.rate = playSpeed * 1.05; // speed synchronization!
     
+    // Apply voice tone customizations (pitch, velocity, and selected Hardware Voice)
+    utterance.pitch = userPitch;
+    // Base pitch modified with user select & speed scale multiplier
+    utterance.rate = userRate * playSpeed;
+    
+    // Assign chosen hardware system voice if custom selected
+    if (selectedVoiceURI) {
+      const matchV = voices.find(v => v.voiceURI === selectedVoiceURI);
+      if (matchV) {
+        utterance.voice = matchV;
+      }
+    }
+
+    // Connect event logs to drive active status animations (soundwave bouncing equalizer)
+    utterance.onstart = () => {
+      setIsSpeaking(true);
+    };
+    utterance.onend = () => {
+      setIsSpeaking(false);
+    };
+    utterance.onerror = () => {
+      setIsSpeaking(false);
+    };
+
     window.speechSynthesis.speak(utterance);
+    // Fallback assert speaking status
+    setIsSpeaking(true);
   };
+
+  // Immediate narration update on live parameter adjustments while active
+  useEffect(() => {
+    if (isPlaying) {
+      speakSceneNarration(currentSceneObj.narratorText);
+    } else {
+      if ("speechSynthesis" in window) {
+        window.speechSynthesis.cancel();
+      }
+      setIsSpeaking(false);
+    }
+  }, [selectedTutorId, selectedVoiceURI, userPitch, userRate]);
 
   // Playback timer controls
   useEffect(() => {
@@ -162,6 +339,7 @@ export default function VideoTutorialPlayer({ topic, globalAudioEnabled }: Video
             } else {
               // End of video reached
               setIsPlaying(false);
+              setIsSpeaking(false);
               return 100;
             }
           }
@@ -172,6 +350,7 @@ export default function VideoTutorialPlayer({ topic, globalAudioEnabled }: Video
       if (intervalRef.current) {
         clearInterval(intervalRef.current);
       }
+      setIsSpeaking(false);
       // Stop speaking when paused
       if ("speechSynthesis" in window) {
         window.speechSynthesis.cancel();
@@ -197,6 +376,7 @@ export default function VideoTutorialPlayer({ topic, globalAudioEnabled }: Video
   // When selected topic changes, reset the playhead completely
   useEffect(() => {
     setIsPlaying(false);
+    setIsSpeaking(false);
     setActiveScene(0);
     setProgress(0);
     if ("speechSynthesis" in window) {
@@ -260,8 +440,20 @@ export default function VideoTutorialPlayer({ topic, globalAudioEnabled }: Video
     setPlaySpeed(speeds[nextIndex]);
   };
 
+  // Resolve tutor active information
+  const activeTutor = TUTOR_PROFILES.find(p => p.id === selectedTutorId) || TUTOR_PROFILES[0];
+
   return (
     <div id={`video-player-container-${topic.id}`} className="bg-[#1A252F] border border-[#2C3E50] rounded-3xl overflow-hidden shadow-xl mb-6 text-left relative max-w-4xl mx-auto">
+      
+      {/* Dynamic inline equalizer CSS classes injection */}
+      <style>{`
+        @keyframes customTutorWave {
+          0% { transform: scaleY(0.1); }
+          100% { transform: scaleY(1); }
+        }
+      `}</style>
+
       {/* Top Banner indicating interactive smart class video walkthrough style */}
       <div className="bg-[#2D6CDF] px-4 py-2.5 flex items-center justify-between text-white text-xs font-bold font-sans">
         <div className="flex items-center gap-2">
@@ -275,7 +467,7 @@ export default function VideoTutorialPlayer({ topic, globalAudioEnabled }: Video
       </div>
 
       {/* Main Classroom blackboard sandbox screen */}
-      <div className="relative aspect-video bg-[#2C3E50]/90 p-6 flex flex-col justify-between overflow-hidden group select-none min-h-[280px] sm:min-h-[340px]">
+      <div className="relative aspect-video bg-[#2C3E50]/90 p-5 flex flex-col justify-between overflow-hidden group select-none min-h-[290px] sm:min-h-[350px]">
         
         {/* Chalk/Grid pattern layer representing school blackboard */}
         <div className="absolute inset-0 opacity-10 bg-[radial-gradient(#ffffff_1px,transparent_1px)] [background-size:16px_16px] pointer-events-none"></div>
@@ -340,16 +532,201 @@ export default function VideoTutorialPlayer({ topic, globalAudioEnabled }: Video
         </div>
 
         {/* Overlay captions at the bottom representing narrator verbal dialogue */}
-        <div className="w-full flex justify-center z-10 pt-2">
-          <div className="bg-black/80 px-4 py-2.5 rounded-2xl border border-white/10 max-w-xl text-center shadow-lg">
-            <p className="text-xs text-[#2ECC71] font-mono uppercase font-bold tracking-widest block text-left text-[9px] mb-0.5">
-              🔊 Speaker smarty owl narration:
-            </p>
-            <p className="text-xs text-gray-100 font-sans leading-normal line-clamp-2 md:line-clamp-none">
-              {currentSceneObj.narratorText}
+        <div className="w-full flex flex-col md:flex-row items-center gap-3 justify-between z-10 pt-2 bg-black/45 p-3 rounded-2xl border border-white/5">
+          
+          {/* Active presenter avatar details */}
+          <div className="flex items-center gap-2.5 shrink-0 self-start md:self-auto">
+            <div className={`w-9 h-9 rounded-full bg-gradient-to-tr ${activeTutor.themeColor} flex items-center justify-center text-lg shadow-inner relative`}>
+              <span>{activeTutor.avatar}</span>
+              {/* Animated active beacon pulse */}
+              {isSpeaking && isPlaying && (
+                <span className="absolute -top-0.5 -right-0.5 w-3 h-3 bg-[#2ECC71] rounded-full border border-white animate-ping"></span>
+              )}
+            </div>
+            <div>
+              <p className="text-xs font-bold text-[#ECF0F1] leading-none mb-0.5">{activeTutor.name}</p>
+              <p className="text-[9px] font-mono font-medium text-gray-300 tracking-wide uppercase">{activeTutor.role}</p>
+            </div>
+          </div>
+
+          {/* Dialogue speech captions */}
+          <div className="flex-1 text-center md:text-left min-w-0">
+            <p className="text-[11px] text-gray-100 font-sans leading-relaxed line-clamp-3 md:line-clamp-none italic font-medium">
+              "{currentSceneObj.narratorText}"
             </p>
           </div>
+
+          {/* Equalizer Visualizer */}
+          <div className="flex items-center gap-1.5 shrink-0 bg-black/35 px-2.5 py-1.5 rounded-xl border border-white/5">
+            <div className="flex items-end gap-[2px] h-3.5">
+              {[1, 2, 3, 4, 5, 6, 7, 8].map((bar) => {
+                const uniqueHeight = [6, 14, 10, 16, 8, 12, 15, 7][bar - 1];
+                return (
+                  <div
+                    key={bar}
+                    className="w-[3px] bg-[#2ECC71] rounded-full origin-bottom"
+                    style={{
+                      height: `${uniqueHeight}px`,
+                      animation: isSpeaking && isPlaying ? "customTutorWave 0.5s ease-in-out infinite alternate" : "none",
+                      animationDelay: `${bar * 0.08}s`,
+                      transform: isSpeaking && isPlaying ? "scaleY(1)" : "scaleY(0.2)",
+                    }}
+                  />
+                );
+              })}
+            </div>
+          </div>
+
         </div>
+
+      </div>
+
+      {/* TUTOR SELECTION DECK & PRESET CUSTOMISER */}
+      <div className="bg-[#243342] border-t border-[#2C3E50] p-4 font-sans text-slate-100">
+        
+        {/* Segmented title & Customiser toggle */}
+        <div className="flex items-center justify-between mb-3">
+          <div className="flex items-center gap-2">
+            <Users className="w-4 h-4 text-[#F1C40F]" />
+            <span className="text-xs font-bold uppercase tracking-wider text-slate-200">
+              Select Your Classroom Tutor Teacher:
+            </span>
+          </div>
+
+          <button
+            onClick={() => setShowVoiceCustomizer(!showVoiceCustomizer)}
+            className={`text-[11px] font-bold px-2.5 py-1 rounded-lg border transition-all flex items-center gap-1.5 cursor-pointer ${
+              showVoiceCustomizer 
+                ? "bg-[#2D6CDF] border-[#2D6CDF] text-white" 
+                : "bg-black/20 border-white/10 text-gray-300 hover:bg-black/30"
+            }`}
+          >
+            <SlidersHorizontal className="w-3.5 h-3.5" />
+            <span>{showVoiceCustomizer ? "Hide Settings" : "Tweak Voice Detail"}</span>
+          </button>
+        </div>
+
+        {/* Tutor selection buttons grid */}
+        <div className="grid grid-cols-2 md:grid-cols-4 gap-2 mb-4">
+          {TUTOR_PROFILES.map((profile) => {
+            const isSelected = profile.id === selectedTutorId;
+            return (
+              <button
+                key={profile.id}
+                onClick={() => setSelectedTutorId(profile.id)}
+                className={`p-3 rounded-2xl text-left transition-all border outline-none text-xs flex items-center gap-2.5 cursor-pointer group hover:scale-[1.01] ${
+                  isSelected 
+                    ? "bg-[#1E2E3E] border-[#2D6CDF] ring-2 ring-[#2D6CDF]/30" 
+                    : "bg-black/20 border-transparent hover:border-white/10 hover:bg-black/25"
+                }`}
+              >
+                <div className={`w-9 h-9 rounded-full bg-gradient-to-tr ${profile.themeColor} flex items-center justify-center text-lg shadow-inner group-hover:rotate-12 transition-transform`}>
+                  {profile.avatar}
+                </div>
+                <div className="min-w-0">
+                  <h5 className="font-extrabold text-white leading-tight flex items-center gap-1">
+                    {profile.name}
+                    {isSelected && <span className="w-1.5 h-1.5 bg-[#2ECC71] rounded-full"></span>}
+                  </h5>
+                  <p className="text-[10px] text-gray-400 font-mono truncate">{profile.role}</p>
+                </div>
+              </button>
+            );
+          })}
+        </div>
+
+        {/* Real-time description note */}
+        <div className="p-2.5 bg-black/15 rounded-xl text-[11px] text-gray-300 border border-white/5 flex items-center gap-2 mb-1">
+          <span className="font-bold text-[#F1C40F]">🎤 Current Quote:</span>
+          <span>"{activeTutor.tagline}"</span>
+          <span className="text-gray-500">•</span>
+          <span className="text-gray-400 italic font-mono text-[10px]">{activeTutor.customDescription}</span>
+        </div>
+
+        {/* Collapsible fine tuning voice synthesizer cockpit controls */}
+        <AnimatePresence>
+          {showVoiceCustomizer && (
+            <motion.div
+              initial={{ opacity: 0, height: 0 }}
+              animate={{ opacity: 1, height: "auto" }}
+              exit={{ opacity: 0, height: 0 }}
+              className="overflow-hidden"
+            >
+              <div className="mt-3 pt-3 border-t border-white/5 grid grid-cols-1 md:grid-cols-3 gap-4 bg-black/15 p-4 rounded-2xl">
+                
+                {/* OS Installed Voice Pack selector dropdown */}
+                <div className="space-y-1.5 md:col-span-1">
+                  <label className="text-[10px] uppercase font-bold tracking-wider text-slate-300 block">
+                    Device Native Engine Voice:
+                  </label>
+                  {voices.length === 0 ? (
+                    <div className="text-[10px] text-red-300 p-2 bg-red-950/20 rounded-lg border border-red-900/10 font-mono leading-tight">
+                      No voices discovered. Using system default voice standard.
+                    </div>
+                  ) : (
+                    <select
+                      value={selectedVoiceURI}
+                      onChange={(e) => setSelectedVoiceURI(e.target.value)}
+                      className="w-full bg-[#1A252F] border border-white/10 rounded-xl px-2.5 py-1.5 text-xs text-white outline-none font-mono focus:border-[#2D6CDF]"
+                    >
+                      {voices.map((v) => (
+                        <option key={v.voiceURI} value={v.voiceURI} className="bg-slate-900 text-white">
+                          {v.name} ({v.lang.toUpperCase()})
+                        </option>
+                      ))}
+                    </select>
+                  )}
+                  <p className="text-[9px] text-gray-400 font-medium">
+                    Choosing different native voices gives you high-definition pronunciations!
+                  </p>
+                </div>
+
+                {/* Voice Pitch slider */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-wider text-slate-300">
+                    <span>Voice Tone (Pitch):</span>
+                    <span className="font-mono text-[#F1C40F]">{userPitch.toFixed(2)}x</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2.0"
+                    step="0.05"
+                    value={userPitch}
+                    onChange={(e) => setUserPitch(parseFloat(e.target.value))}
+                    className="w-full accent-[#2D6CDF] bg-black/40 h-1.5 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[8px] text-gray-400 font-mono">
+                    <span>DEEP BARITONE (0.5)</span>
+                    <span>CHILD OWL (2.0)</span>
+                  </div>
+                </div>
+
+                {/* Tutor Base Speed Rate slider */}
+                <div className="space-y-1">
+                  <div className="flex items-center justify-between text-[10px] uppercase font-bold tracking-wider text-slate-300">
+                    <span>Tutor Speech Speed:</span>
+                    <span className="font-mono text-[#2ECC71]">{userRate.toFixed(2)}x</span>
+                  </div>
+                  <input
+                    type="range"
+                    min="0.5"
+                    max="2.0"
+                    step="0.05"
+                    value={userRate}
+                    onChange={(e) => setUserRate(parseFloat(e.target.value))}
+                    className="w-full accent-[#2ECC71] bg-black/40 h-1.5 rounded-lg appearance-none cursor-pointer"
+                  />
+                  <div className="flex justify-between text-[8px] text-gray-400 font-mono">
+                    <span>SLOW (0.5)</span>
+                    <span>RAPID WALK (2.0)</span>
+                  </div>
+                </div>
+
+              </div>
+            </motion.div>
+          )}
+        </AnimatePresence>
 
       </div>
 
@@ -404,7 +781,7 @@ export default function VideoTutorialPlayer({ topic, globalAudioEnabled }: Video
               title={isPlaying ? "Pause walkthrough tutorial" : "Play vocal walkthrough tutorial"}
             >
               {isPlaying ? <Pause className="w-4 h-4 fill-white" /> : <Play className="w-4 h-4 fill-white" />}
-              <span>{isPlaying ? "PAUSE walk" : "PLAY VIDEO WALKTHROUGH"}</span>
+              <span>{isPlaying ? "PAUSE WALKTHROUGH" : "PLAY VIDEO TUTORIAL"}</span>
             </button>
             
             <button
