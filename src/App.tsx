@@ -161,6 +161,33 @@ export default function App() {
     setActiveTab("dashboard");
   };
 
+  const handleDeleteProfile = (profileId: string) => {
+    setProfiles((prev) => {
+      const updated = prev.filter(p => (p.id || "default") !== profileId);
+      let nextProfiles = updated;
+      if (updated.length === 0) {
+        nextProfiles = [DEFAULT_PROFILE];
+      }
+      try {
+        localStorage.setItem(LOCAL_STORAGE_PROFILES_KEY, JSON.stringify(nextProfiles));
+      } catch (e) {
+        console.warn("Could not save profiles after deletion:", e);
+      }
+
+      // If progress is deleted for the currently active profile, switch immediately
+      if ((studentProfile.id || "default") === profileId) {
+        const fallback = nextProfiles[0] || DEFAULT_PROFILE;
+        setStudentProfile(fallback);
+        try {
+          localStorage.setItem(LOCAL_STORAGE_ACTIVE_ID_KEY, fallback.id || "default");
+        } catch (e) {
+          console.warn("Could not save active profile id after deletion:", e);
+        }
+      }
+      return nextProfiles;
+    });
+  };
+
   const handleProfileChange = (updatedFields: Partial<StudentProfile>) => {
     const next = { ...studentProfile, ...updatedFields };
     // Allocate award badge if they complete their registration profile
@@ -737,6 +764,7 @@ export default function App() {
         profiles={profiles}
         onSelectProfile={handleSelectProfileId}
         onCreateProfile={handleCreateProfile}
+        onDeleteProfile={handleDeleteProfile}
       />
 
     </div>

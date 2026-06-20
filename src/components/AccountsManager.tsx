@@ -19,7 +19,8 @@ import {
   Sparkles,
   RefreshCw,
   Eye,
-  AlertCircle
+  AlertCircle,
+  Trash2
 } from "lucide-react";
 import { StudentProfile, ClassLevel } from "../types";
 
@@ -30,6 +31,7 @@ interface AccountsManagerProps {
   profiles: StudentProfile[];
   onSelectProfile: (id: string) => void;
   onCreateProfile: (profile: StudentProfile) => void;
+  onDeleteProfile?: (id: string) => void;
 }
 
 type Mode = "list" | "signup_choice" | "google_oauth" | "outlook_oauth" | "custom_local";
@@ -40,7 +42,8 @@ export default function AccountsManager({
   currentProfile,
   profiles,
   onSelectProfile,
-  onCreateProfile
+  onCreateProfile,
+  onDeleteProfile
 }: AccountsManagerProps) {
   const [mode, setMode] = useState<Mode>("list");
   
@@ -137,10 +140,10 @@ export default function AccountsManager({
 
       onCreateProfile(newProf);
       setMode("list");
-      // Reset states
       setGmailEmail("");
       setGmailPassword("");
       setGmailFullName("");
+      onClose();
     });
   };
 
@@ -185,10 +188,10 @@ export default function AccountsManager({
 
       onCreateProfile(newProf);
       setMode("list");
-      // Reset state
       setOutlookEmail("");
       setOutlookPassword("");
       setOutlookFullName("");
+      onClose();
     });
   };
 
@@ -228,7 +231,7 @@ export default function AccountsManager({
       />
 
       {/* Modal Container */}
-      <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 max-w-lg w-full overflow-hidden relative z-10 flex flex-col max-h-[90vh]">
+      <div className="bg-white rounded-3xl shadow-2xl border border-slate-100 w-full overflow-hidden relative z-10 flex flex-col max-h-[92vh] max-w-lg">
         
         {/* Header header banner */}
         <div className="bg-slate-50 border-b border-slate-100 px-6 py-4 flex items-center justify-between">
@@ -281,73 +284,101 @@ export default function AccountsManager({
               </span>
 
               <div className="grid grid-cols-1 gap-3">
-                {profiles.map((prof) => {
-                  const isActive = (prof.id || "default") === (currentProfile.id || "default");
-                  return (
-                    <div 
-                      key={prof.id || "default"}
-                      onClick={() => !isActive && handleSelect(prof.id || "default")}
-                      className={`p-4 rounded-2xl border transition-all text-left flex items-center justify-between ${
-                        isActive 
-                          ? "border-[#2D6CDF] bg-[#2D6CDF]/5 ring-2 ring-[#2D6CDF]/10" 
-                          : "border-slate-100 hover:border-slate-300 bg-white cursor-pointer hover:shadow-xs"
-                      }`}
-                    >
-                      <div className="flex items-center gap-4">
-                        <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200/50 flex items-center justify-center text-2xl select-none">
-                          {prof.avatar || "👦"}
-                        </div>
-                        <div>
-                          <div className="flex items-center gap-2">
-                            <h4 className="font-extrabold text-[#2C3E50] text-sm">
-                              {prof.name}
-                            </h4>
-                            {prof.provider === "gmail" && (
-                              <span className="text-[9px] bg-red-100 text-red-600 font-extrabold px-1.5 py-0.5 rounded-full flex items-center gap-0.5" title="Signed up with Google Gmail">
-                                <Mail className="w-2.5 h-2.5" /> G
-                              </span>
-                            )}
-                            {prof.provider === "outlook" && (
-                              <span className="text-[9px] bg-blue-100 text-blue-600 font-extrabold px-1.5 py-0.5 rounded-full flex items-center gap-0.5" title="Signed up with Microsoft Outlook">
-                                <Mail className="w-2.5 h-2.5" /> Outlook
-                              </span>
-                            )}
+                <AnimatePresence initial={false}>
+                  {profiles.map((prof) => {
+                    const isActive = (prof.id || "default") === (currentProfile.id || "default");
+                    return (
+                      <motion.div 
+                        key={prof.id || "default"}
+                        layout
+                        initial={{ opacity: 0, scale: 0.95 }}
+                        animate={{ opacity: 1, scale: 1 }}
+                        exit={{ opacity: 0, x: -30, height: 0, marginBottom: 0, padding: 0, overflow: "hidden" }}
+                        transition={{ type: "spring", stiffness: 350, damping: 25 }}
+                        onClick={() => !isActive && handleSelect(prof.id || "default")}
+                        className={`p-4 rounded-2xl border transition-all text-left flex items-center justify-between ${
+                          isActive 
+                            ? "border-[#2D6CDF] bg-[#2D6CDF]/5 ring-2 ring-[#2D6CDF]/10" 
+                            : "border-slate-100 hover:border-slate-300 bg-white cursor-pointer hover:shadow-xs"
+                        }`}
+                      >
+                        <div className="flex items-center gap-4">
+                          <div className="w-12 h-12 rounded-xl bg-slate-100 border border-slate-200/50 flex items-center justify-center text-2xl select-none">
+                            {prof.avatar || "👦"}
                           </div>
-                          <span className="text-xs text-[#2D6CDF] font-bold block mt-0.5">
-                            {prof.level} Syllabus Track
-                          </span>
-                          {prof.email && (
-                            <span className="text-[10px] text-slate-400 block mt-0.5 font-mono">
-                              {prof.email}
+                          <div>
+                            <div className="flex items-center gap-2">
+                              <h4 className="font-extrabold text-[#2C3E50] text-sm">
+                                {prof.name}
+                              </h4>
+                              {prof.provider === "gmail" && (
+                                <span className="text-[9px] bg-red-100 text-red-600 font-extrabold px-1.5 py-0.5 rounded-full flex items-center gap-0.5" title="Signed up with Google Gmail">
+                                  <Mail className="w-2.5 h-2.5" /> G
+                                </span>
+                              )}
+                              {prof.provider === "outlook" && (
+                                <span className="text-[9px] bg-blue-100 text-blue-600 font-extrabold px-1.5 py-0.5 rounded-full flex items-center gap-0.5" title="Signed up with Microsoft Outlook">
+                                  <Mail className="w-2.5 h-2.5" /> Outlook
+                                </span>
+                              )}
+                            </div>
+                            <span className="text-xs text-[#2D6CDF] font-bold block mt-0.5">
+                              {prof.level} Syllabus Track
                             </span>
-                          )}
-                        </div>
-                      </div>
-
-                      {/* Right metadata stats */}
-                      <div className="flex items-center gap-3">
-                        <div className="text-right hidden sm:block">
-                          <div className="flex items-center gap-1 justify-end text-xs font-bold text-amber-500">
-                            <Star className="w-3 h-3 fill-amber-500" /> {prof.stars}
-                          </div>
-                          <div className="text-[10px] font-mono text-slate-400 mt-0.5">
-                            {prof.xp} XP Points
+                            {prof.email && (
+                              <span className="text-[10px] text-slate-400 block mt-0.5 font-mono">
+                                {prof.email}
+                              </span>
+                            )}
                           </div>
                         </div>
 
-                        {isActive ? (
-                          <span className="w-7 h-7 bg-green-500 text-white rounded-full flex items-center justify-center text-xs">
-                            <Check className="w-4 h-4 text-white" />
-                          </span>
-                        ) : (
-                          <span className="text-[11px] font-extrabold text-[#2D6CDF] hover:underline">
-                            Login ➔
-                          </span>
-                        )}
-                      </div>
-                    </div>
-                  );
-                })}
+                        {/* Right metadata stats */}
+                        <div className="flex items-center gap-3.5" onClick={(e) => e.stopPropagation()}>
+                          <div className="text-right hidden sm:block">
+                            <div className="flex items-center gap-1 justify-end text-xs font-bold text-amber-500">
+                              <Star className="w-3 h-3 fill-amber-500" /> {prof.stars}
+                            </div>
+                            <div className="text-[10px] font-mono text-slate-400 mt-0.5">
+                              {prof.xp} XP Points
+                            </div>
+                          </div>
+
+                          <div className="flex items-center gap-2">
+                            <button
+                              type="button"
+                              onClick={() => !isActive && handleSelect(prof.id || "default")}
+                              className={`w-7 h-7 rounded-full flex items-center justify-center transition-all ${
+                                isActive 
+                                  ? "bg-green-500 text-white cursor-default" 
+                                  : "hover:bg-slate-100 text-[#2D6CDF] hover:scale-105 cursor-pointer"
+                              }`}
+                              title={isActive ? "Active Portal" : "Login to Portal"}
+                            >
+                              {isActive ? (
+                                <Check className="w-4 h-4 text-white" />
+                              ) : (
+                                <ArrowRight className="w-4 h-4" />
+                              )}
+                            </button>
+
+                            <button
+                              type="button"
+                              onClick={(e) => {
+                                e.stopPropagation();
+                                onDeleteProfile?.(prof.id || "default");
+                              }}
+                              className="w-7 h-7 rounded-full flex items-center justify-center text-slate-400 hover:text-red-500 hover:bg-red-50 transition-all cursor-pointer"
+                              title="Delete Account"
+                            >
+                              <Trash2 className="w-3.5 h-3.5" />
+                            </button>
+                          </div>
+                        </div>
+                      </motion.div>
+                    );
+                  })}
+                </AnimatePresence>
               </div>
 
               {/* Add Account Button */}
